@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supplemental Shift Bid — Open Slots</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Google Sans', Roboto, Arial, sans-serif; background: #f0ebf8; min-height: 100vh; padding: 24px 16px 48px; }
+.page { max-width: 640px; margin: 0 auto; }
+.header-bar { height: 10px; background: #673ab7; border-radius: 8px 8px 0 0; }
+.card { background: #fff; border-radius: 0 0 8px 8px; padding: 24px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.card.section { border-radius: 8px; border-top: 6px solid #673ab7; }
+h1 { font-size: 26px; font-weight: 400; color: #202124; margin-bottom: 8px; }
+.subtitle { font-size: 14px; color: #202124; line-height: 1.5; margin-bottom: 12px; }
+.deadline-pill { display: inline-block; background: #ede7f6; color: #4527a0; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-top: 8px; }
+.account-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid #e0e0e0; font-size: 13px; color: #5f6368; }
+.required-note { color: #d93025; font-size: 13px; padding-top: 10px; }
+.question-label { font-size: 16px; color: #202124; margin-bottom: 6px; }
+.question-sub { font-size: 13px; color: #5f6368; margin-bottom: 14px; line-height: 1.5; }
+.required-star { color: #d93025; }
+.text-input { width: 75%; border: none; border-bottom: 1px solid #dadce0; padding: 6px 0; font-size: 14px; outline: none; color: #202124; background: transparent; transition: border-color 0.15s; }
+.text-input:focus { border-bottom: 2px solid #673ab7; }
+.name-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.name-field { flex: 1; min-width: 220px; }
+.checkbox-list { list-style: none; margin-top: 8px; }
+.checkbox-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1.5px solid #e8def8; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.checkbox-item:hover { background: #faf7ff; }
+.checkbox-item.checked { background: #f3edff; border-color: #673ab7; }
+.checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: #673ab7; margin-top: 2px; cursor: pointer; flex-shrink: 0; }
+.checkbox-text { flex: 1; font-size: 14px; color: #202124; line-height: 1.4; }
+.checkbox-slots { font-size: 12px; color: #5f6368; margin-top: 2px; }
+.rank-section { margin-top: 18px; padding-top: 18px; border-top: 1px dashed #e0e0e0; display: none; }
+.rank-section.show { display: block; }
+.rank-list { list-style: none; margin-top: 8px; }
+.rank-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #fff; border: 1.5px solid #e8def8; border-radius: 8px; margin-bottom: 8px; cursor: grab; user-select: none; transition: border-color 0.15s, box-shadow 0.15s; }
+.rank-item:active { cursor: grabbing; }
+.rank-item.dragging { opacity: 0.4; }
+.rank-item.drag-over { border-color: #673ab7; box-shadow: 0 0 0 3px #ede7f6; }
+.rank-badge { width: 28px; height: 28px; border-radius: 50%; background: #673ab7; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.rank-text { flex: 1; font-size: 14px; color: #202124; line-height: 1.3; }
+.rank-handle { color: #bbb; font-size: 18px; flex-shrink: 0; line-height: 1; }
+.rank-hint { font-size: 12px; color: #9e9e9e; margin-bottom: 12px; }
+.error-msg { font-size: 12px; color: #d93025; margin-top: 8px; display: none; }
+.error-msg.show { display: block; }
+.warn-banner { background: #fff3e0; border: 1px solid #ffb74d; border-radius: 6px; padding: 10px 14px; font-size: 13px; color: #7a4400; margin-top: 10px; display: none; }
+.warn-banner.show { display: block; }
+.closed-banner { background: #ffebee; border: 1px solid #ef5350; border-radius: 6px; padding: 14px 16px; font-size: 14px; color: #b71c1c; margin-top: 12px; display: none; }
+.closed-banner.show { display: block; }
+.actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #f0f0f0; flex-wrap: wrap; }
+.btn-primary { background: #673ab7; color: #fff; border: none; border-radius: 4px; padding: 10px 28px; font-size: 14px; font-family: inherit; cursor: pointer; }
+.btn-primary:hover:not(:disabled) { background: #5e35b1; }
+.btn-primary:disabled { background: #c5b8e0; cursor: not-allowed; }
+.btn-ghost { background: none; border: none; color: #673ab7; font-size: 14px; cursor: pointer; font-family: inherit; }
+.btn-ghost:hover { text-decoration: underline; }
+.footer-note { font-size: 12px; color: #9e9e9e; margin-top: 12px; text-align: center; }
+#success-screen { display: none; }
+.success-card { background: #fff; border-radius: 8px; padding: 40px 28px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.check-circle { width: 64px; height: 64px; background: #ede7f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+.check-circle svg { fill: #673ab7; }
+.success-title { font-size: 22px; font-weight: 400; color: #202124; margin-bottom: 8px; }
+.success-name { font-size: 15px; color: #5f6368; margin-bottom: 18px; }
+.success-list { text-align: left; background: #f9f6ff; border-radius: 6px; padding: 14px 18px; max-width: 480px; margin: 0 auto; }
+.success-list-title { font-size: 12px; font-weight: 600; color: #673ab7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.success-list ul { list-style: none; }
+.success-rank-item { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+.success-rank-num { width: 24px; height: 24px; border-radius: 50%; background: #673ab7; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.success-rank-text { font-size: 13px; color: #3c3c3c; }
+.btn-another { margin-top: 24px; background: none; border: 1px solid #673ab7; color: #673ab7; border-radius: 4px; padding: 9px 20px; font-size: 14px; cursor: pointer; font-family: inherit; }
+.btn-another:hover { background: #f5f0ff; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="form-screen">
+    <div class="header-bar"></div>
+    <div class="card">
+      <h1>Supplemental Shift Bid — Open Slots</h1>
+      <p class="subtitle">A few slots have opened up since the June 2026 shift bid. Select the open shift(s) you'd like to bid on. If you select more than one, drag them into your order of preference. Awards will be made by seniority.</p>
+      <span class="deadline-pill" id="deadline-pill">Submissions close Friday at midnight</span>
+      <div class="account-row">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        Responses are not shared externally
+      </div>
+      <p class="required-note">* Indicates required question</p>
+      <div class="closed-banner" id="closed-banner">Submissions for this bid are now closed. Please reach out to your manager if you have questions.</div>
+    </div>
+    <div class="card section">
+      <p class="question-label">Your Name <span class="required-star">*</span></p>
+      <p class="question-sub">Please enter your name <strong>exactly as it appears in Deputy</strong> — no nicknames or shortened versions.</p>
+      <div class="name-row">
+        <div class="name-field">
+          <label class="question-sub" style="margin-bottom:4px;display:block;">First Name</label>
+          <input type="text" class="text-input" id="first-name-input" placeholder="First name" autocomplete="given-name" style="width:100%;">
+          <div class="error-msg" id="first-name-error">This is a required question.</div>
+        </div>
+        <div class="name-field">
+          <label class="question-sub" style="margin-bottom:4px;display:block;">Last Name</label>
+          <input type="text" class="text-input" id="last-name-input" placeholder="Last name" autocomplete="family-name" style="width:100%;">
+          <div class="error-msg" id="last-name-error">This is a required question.</div>
+        </div>
+      </div>
+      <div class="warn-banner" id="dup-warn">A response has already been submitted under this name in this session. Submitting again will replace your prior bid (the older row will be marked SUPERSEDED). Contact your manager if you have questions.</div>
+    </div>
+    <div class="card section">
+      <p class="question-label">Which open shift(s) would you like to bid on? <span class="required-star">*</span></p>
+      <p class="question-sub">Check every shift you're interested in. The slot count next to each shift is the number of openings currently available.</p>
+      <ul class="checkbox-list" id="shift-list"></ul>
+      <div class="error-msg" id="shift-error">Please select at least one shift.</div>
+
+      <div class="rank-section" id="rank-section">
+        <p class="question-label" style="font-size:14px;">Rank your selections in order of preference</p>
+        <p class="rank-hint">Drag to reorder. #1 = your top choice. We'll try to award your highest-ranked available shift based on seniority.</p>
+        <ul class="rank-list" id="rank-list"></ul>
+      </div>
+
+      <div class="actions">
+        <button class="btn-primary" id="submit-btn" onclick="submitForm()">Submit</button>
+        <button class="btn-ghost" onclick="resetSelections()">Clear selections</button>
+      </div>
+      <p class="footer-note">Never submit passwords through this form.</p>
+    </div>
+  </div>
+  <div id="success-screen">
+    <div class="success-card">
+      <div class="check-circle">
+        <svg viewBox="0 0 24 24" width="32" height="32"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </div>
+      <p class="success-title">Bid recorded!</p>
+      <p class="success-name" id="success-name"></p>
+      <div class="success-list">
+        <div class="success-list-title">Your bid(s)</div>
+        <ul id="success-items"></ul>
+      </div>
+      <button class="btn-another" onclick="resetForm()">Submit another response</button>
+    </div>
+  </div>
+</div>
+<script>
+// ====== CONFIG ======
+// Replace with your Apps Script URL once the supplemental responses tab is wired up
+const APPS_SCRIPT_URL = 'REPLACE_WITH_NEW_APPS_SCRIPT_URL';
+// Friday midnight cutoff — adjust if launch date shifts
+const DEADLINE_ISO = '2026-05-30T00:00:00'; // End of Friday May 29 / start of Saturday May 30 (local time)
+// Open shifts available in this bid
+const OPEN_SHIFTS = [
+  { label: "FT Day 6am-230pm — Monday Off",          slots: 1 },
+  { label: "FT Day 6am-230pm — Tuesday Off",         slots: 1 },
+  { label: "FT Swing 2pm-1030pm — Monday Off",       slots: 1 },
+  { label: "FT Swing 2pm-1030pm — Friday Off",       slots: 1 }
+];
+// ====================
+
+const firstNameInput = document.getElementById('first-name-input');
+const lastNameInput  = document.getElementById('last-name-input');
+let submittedNames = [];
+let dragSrc = null;
+
+function checkDeadline() {
+  const now = new Date();
+  const deadline = new Date(DEADLINE_ISO);
+  if (now >= deadline) {
+    document.getElementById('closed-banner').classList.add('show');
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('deadline-pill').textContent = 'Submissions closed';
+    document.getElementById('deadline-pill').style.background = '#ffebee';
+    document.getElementById('deadline-pill').style.color = '#b71c1c';
+  }
+}
+
+function buildShiftList() {
+  const list = document.getElementById('shift-list');
+  list.innerHTML = '';
+  OPEN_SHIFTS.forEach((shift, i) => {
+    const li = document.createElement('li');
+    li.className = 'checkbox-item';
+    li.innerHTML = `
+      <input type="checkbox" id="shift-${i}" value="${shift.label}">
+      <div>
+        <div class="checkbox-text">${shift.label}</div>
+        <div class="checkbox-slots">${shift.slots} slot${shift.slots > 1 ? 's' : ''} available</div>
+      </div>
+    `;
+    li.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'INPUT') {
+        const cb = li.querySelector('input');
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+      }
+    });
+    const cb = li.querySelector('input');
+    cb.addEventListener('change', () => {
+      li.classList.toggle('checked', cb.checked);
+      rebuildRankList();
+    });
+    list.appendChild(li);
+  });
+}
+
+function getSelectedShifts() {
+  return Array.from(document.querySelectorAll('#shift-list input:checked')).map(cb => cb.value);
+}
+
+function rebuildRankList() {
+  const selected = getSelectedShifts();
+  const section = document.getElementById('rank-section');
+  const list = document.getElementById('rank-list');
+  if (selected.length >= 2) {
+    section.classList.add('show');
+    // Preserve any existing order among still-checked items, then append newly-checked items
+    const existingOrder = Array.from(list.children).map(li => li.dataset.value).filter(v => selected.includes(v));
+    const newlyAdded = selected.filter(v => !existingOrder.includes(v));
+    const finalOrder = [...existingOrder, ...newlyAdded];
+    list.innerHTML = '';
+    finalOrder.forEach((val, i) => {
+      const li = document.createElement('li');
+      li.className = 'rank-item';
+      li.draggable = true;
+      li.dataset.value = val;
+      li.innerHTML = `<div class="rank-badge">${i + 1}</div><div class="rank-text">${val}</div><div class="rank-handle">⠿</div>`;
+      li.addEventListener('dragstart', onDragStart);
+      li.addEventListener('dragover', onDragOver);
+      li.addEventListener('drop', onDrop);
+      li.addEventListener('dragend', onDragEnd);
+      li.addEventListener('touchstart', onTouchStart, {passive: true});
+      li.addEventListener('touchmove', onTouchMove, {passive: false});
+      li.addEventListener('touchend', onTouchEnd);
+      list.appendChild(li);
+    });
+  } else {
+    section.classList.remove('show');
+    list.innerHTML = '';
+  }
+}
+
+function refreshBadges() {
+  document.querySelectorAll('#rank-list .rank-item').forEach((li, i) => {
+    li.querySelector('.rank-badge').textContent = i + 1;
+  });
+}
+
+function resetSelections() {
+  document.querySelectorAll('#shift-list input').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.checkbox-item').classList.remove('checked');
+  });
+  rebuildRankList();
+  document.getElementById('shift-error').classList.remove('show');
+}
+
+function checkDup() {
+  const v = (firstNameInput.value.trim() + ' ' + lastNameInput.value.trim()).toLowerCase();
+  document.getElementById('dup-warn').classList.toggle('show', v.trim().length > 1 && submittedNames.includes(v));
+}
+firstNameInput.addEventListener('blur', checkDup);
+lastNameInput.addEventListener('blur', checkDup);
+
+// ====== Drag-and-drop ======
+function onDragStart(e) {
+  dragSrc = this;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.rank-item').forEach(el => el.classList.remove('drag-over'));
+  this.classList.add('drag-over');
+  return false;
+}
+function onDrop(e) {
+  e.stopPropagation();
+  if (dragSrc !== this) {
+    const list = this.parentNode;
+    const items = Array.from(list.children);
+    const srcIdx = items.indexOf(dragSrc);
+    const tgtIdx = items.indexOf(this);
+    if (srcIdx < tgtIdx) list.insertBefore(dragSrc, this.nextSibling);
+    else list.insertBefore(dragSrc, this);
+    refreshBadges();
+  }
+  return false;
+}
+function onDragEnd() {
+  document.querySelectorAll('.rank-item').forEach(el => {
+    el.classList.remove('dragging');
+    el.classList.remove('drag-over');
+  });
+}
+let touchItem = null, touchClone = null, touchOffsetY = 0;
+function onTouchStart(e) {
+  touchItem = this;
+  const t = e.touches[0];
+  const rect = this.getBoundingClientRect();
+  touchOffsetY = t.clientY - rect.top;
+  touchClone = this.cloneNode(true);
+  touchClone.style.cssText = `position:fixed;left:${rect.left}px;width:${rect.width}px;opacity:0.85;z-index:1000;pointer-events:none;border-color:#673ab7;box-shadow:0 4px 16px rgba(103,58,183,0.2);`;
+  document.body.appendChild(touchClone);
+  this.classList.add('dragging');
+}
+function onTouchMove(e) {
+  e.preventDefault();
+  if (!touchClone) return;
+  const t = e.touches[0];
+  touchClone.style.top = (t.clientY - touchOffsetY) + 'px';
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const target = el && el.closest('.rank-item');
+  document.querySelectorAll('.rank-item').forEach(i => i.classList.remove('drag-over'));
+  if (target && target !== touchItem) target.classList.add('drag-over');
+}
+function onTouchEnd(e) {
+  if (!touchClone) return;
+  touchClone.remove(); touchClone = null;
+  const t = e.changedTouches[0];
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const target = el && el.closest('.rank-item');
+  if (target && target !== touchItem) {
+    const list = touchItem.parentNode;
+    const items = Array.from(list.children);
+    const srcIdx = items.indexOf(touchItem);
+    const tgtIdx = items.indexOf(target);
+    if (srcIdx < tgtIdx) list.insertBefore(touchItem, target.nextSibling);
+    else list.insertBefore(touchItem, target);
+    refreshBadges();
+  }
+  document.querySelectorAll('.rank-item').forEach(i => {
+    i.classList.remove('dragging');
+    i.classList.remove('drag-over');
+  });
+  touchItem = null;
+}
+
+// ====== Submit ======
+async function submitForm() {
+  // Re-check deadline at submit time
+  if (new Date() >= new Date(DEADLINE_ISO)) {
+    document.getElementById('closed-banner').classList.add('show');
+    document.getElementById('submit-btn').disabled = true;
+    return;
+  }
+
+  const firstName = firstNameInput.value.trim();
+  const lastName  = lastNameInput.value.trim();
+  document.getElementById('first-name-error').classList.toggle('show', !firstName);
+  document.getElementById('last-name-error').classList.toggle('show', !lastName);
+
+  const selected = getSelectedShifts();
+  document.getElementById('shift-error').classList.toggle('show', selected.length === 0);
+
+  if (!firstName || !lastName || selected.length === 0) {
+    (!firstName ? firstNameInput : !lastName ? lastNameInput : document.getElementById('shift-list'))
+      .scrollIntoView({behavior: 'smooth', block: 'center'});
+    return;
+  }
+
+  // Final ranked order: if multi-select, use drag-rank order; if single, just that one
+  let rankedSelections;
+  if (selected.length >= 2) {
+    rankedSelections = Array.from(document.querySelectorAll('#rank-list .rank-item')).map(li => li.dataset.value);
+  } else {
+    rankedSelections = selected;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  const fullName = `${firstName} ${lastName}`;
+  const rankedStr = rankedSelections.map((v, i) => `${i+1}. ${v}`).join(' | ');
+  const payload = {
+    first_name: firstName,
+    last_name: lastName,
+    full_name: fullName,
+    ranked_selections: rankedStr,
+    num_shifts_bid: rankedSelections.length,
+    timestamp: new Date().toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })
+  };
+  rankedSelections.forEach((v, i) => { payload[`choice_${i+1}`] = v; });
+
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    submittedNames.push(fullName.toLowerCase());
+    document.getElementById('success-name').textContent = fullName;
+    document.getElementById('success-items').innerHTML = rankedSelections.map((v, i) =>
+      `<li class="success-rank-item"><div class="success-rank-num">${i+1}</div><div class="success-rank-text">${v}</div></li>`
+    ).join('');
+    document.getElementById('form-screen').style.display = 'none';
+    document.getElementById('success-screen').style.display = 'block';
+    window.scrollTo(0, 0);
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Submit';
+    alert('Submission failed. Check your connection and try again, or contact your manager.');
+  }
+}
+
+function resetForm() {
+  firstNameInput.value = '';
+  lastNameInput.value = '';
+  document.querySelectorAll('.error-msg, .warn-banner').forEach(e => e.classList.remove('show'));
+  resetSelections();
+  document.getElementById('submit-btn').disabled = false;
+  document.getElementById('submit-btn').textContent = 'Submit';
+  document.getElementById('form-screen').style.display = 'block';
+  document.getElementById('success-screen').style.display = 'none';
+  window.scrollTo(0, 0);
+  checkDeadline();
+}
+
+// Initial render
+buildShiftList();
+checkDeadline();
+</script>
+</body>
+</html>
